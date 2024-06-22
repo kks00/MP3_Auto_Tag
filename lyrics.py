@@ -1,61 +1,43 @@
 import eyed3
 import os
-import requests
-from urllib import parse
 
-def parseStr(strTarget="", strStart="", strEnd=""):
-    inxStart = strTarget.find(strStart)
-    if (inxStart == -1): return ""
-    strTarget = strTarget[inxStart+len(strStart):]
-    inxEnd = strTarget.find(strEnd)
-    if (inxEnd == -1): return ""
-    return strTarget[0:inxEnd]
+from get_song_info import get_song_list, get_genie_login_cookie
 
-def GetDataList(strTarget="", strStart="", strEnd=""):
-    ResultList = []
-    Index = 0
-    while True:
-        inxStart = strTarget.find(strStart)
-        if (inxStart == -1): break;
-        strTarget = strTarget[inxStart+len(strStart):]
-        inxEnd = strTarget.find(strEnd)
-        if (inxEnd == -1): break;
-        ResultList.insert(Index, strTarget[0:inxEnd])
-        strTarget = strTarget[inxEnd+len(strEnd):]
-        Index += 1
-    return ResultList
+GenieID = 'your genie id'
+GeniePW = 'your genie pw'
 
-def GetWebData(url=""):
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36'}
-    reqWeb = requests.get(url, headers=headers)
-    if (reqWeb.status_code == 200):
-        return reqWeb.text
-    else:
-        return ""
-
-ProcessCount = [0, 0]
+genie_cookie = get_genie_login_cookie(GenieID, GeniePW)
+if genie_cookie is None:
+    print("지니 로그인에 실패하였습니다. 19금 음원의 가사를 가져오지 못할 수 있습니다.")
 
 for curFileName in os.listdir(os.path.dirname(os.path.realpath(__file__)) + "/mp3"):
-    print("Processing File : {0}... ".format(curFileName), end="");
-    
+    print("현재 파일: {0}".format(curFileName))
+
     curAudioFile = eyed3.load(os.path.dirname(os.path.realpath(__file__)) + "/mp3/" + curFileName)
 
-    curArtist = curAudioFile.tag.artist
-    if (type(curArtist) == str):
-        if (curArtist.find(" ") != -1):
-            curArtist = curArtist[:curArtist.find(" ")]
-    curKeyword = "{0} {1}".format(curArtist, curAudioFile.tag.title)
-
-    resSearch = GetDataList(GetWebData("https://www.genie.co.kr/search/searchSong?query=" + parse.quote(curKeyword) + "&page=1&pagesize=100"), '<tr class="list" songid="', '">')
-    if len(resSearch) > 0:
-        curSongLyrics = parseStr(GetWebData("https://www.genie.co.kr/detail/songInfo?xgnm=" + resSearch[0]), '<pre id="pLyrics">', '</pre>')
-        curSongLyrics = parseStr(curSongLyrics, '<p>', '</p>')
-        curAudioFile.tag.lyrics.set(curSongLyrics)
-        curAudioFile.tag.save()
-        print("Success!")
-        ProcessCount[0] += 1
+    curFileName = curFileName[:curFileName.find(".mp3")]
+    curTitle = curFileName.split(" - ")[0]
+    if len(curTitle.split(" ")) > 1:
+        curTitle = "{0} {1}".format(curTitle.split(" ")[0], curTitle.split(" ")[1])
     else:
-        print("Failed!")
-        ProcessCount[1] += 1
+        curTitle = curTitle.split(" ")[0]
+    curArtist = curFileName.split(" - ")[1]
+    if len(curArtist.split(" ")) > 0:
+        curArtist = curArtist.split(" ")[0]
+    curKeyword = "{0} {1}".format(curTitle, curArtist)
 
-print("Completed! Success : {0}, Failed: {1}".format(str(ProcessCount[0]), str(ProcessCount[1])))
+    song_list = get_song_list(curKeyword, 10, genie_cookie)
+    if len(song_list) > 0:
+        for index, curr_song in enumerate(song_list):
+            curr_title = curr_song["Title"]
+            curr_artist = curr_song["Artist"]
+            curr_album = curr_song["Album"]
+            print("{0}: 제목: {1}, 아티스트: {2}, 앨범: {3}".format(index, curr_title, curr_artist, curr_album))
+        selected_index = int(input(""))
+
+        selected_song = song_list[selected_index]
+        curAudioFile.tag.lyrics.set(selected_song["lyrics"])
+        curAudioFile.tag.save()
+        print("가사 설정에 성공하였습니다.")
+    else:
+        print("검색 결과가 존재하지 않아 실패하였습니다.")
