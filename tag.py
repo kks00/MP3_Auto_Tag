@@ -1,7 +1,7 @@
 import eyed3
 import os
 
-from get_song_info import get_song_list, get_song_albumart
+from get_song_info import get_song_list, get_song_albumart, is_first_auto
 
 for curFileName in os.listdir(os.path.dirname(os.path.realpath(__file__)) + "/mp3"):
     print("현재 파일: {0}".format(curFileName))
@@ -10,23 +10,19 @@ for curFileName in os.listdir(os.path.dirname(os.path.realpath(__file__)) + "/mp
     
     curFileName = curFileName[:curFileName.find(".mp3")]
     curTitle = curFileName.split(" - ")[0]
-    if len(curTitle.split(" ")) > 1:
-        curTitle = "{0} {1}".format(curTitle.split(" ")[0], curTitle.split(" ")[1])
-    else:
-        curTitle = curTitle.split(" ")[0]
     curArtist = curFileName.split(" - ")[1]
-    if len(curArtist.split(" ")) > 0:
-        curArtist = curArtist.split(" ")[0]
     curKeyword = "{0} {1}".format(curTitle, curArtist)
 
     song_list = get_song_list(curKeyword, 10)
     if len(song_list) > 0:
-        for index, curr_song in enumerate(song_list):
-            curr_title = curr_song["Title"]
-            curr_artist = curr_song["Artist"]
-            curr_album = curr_song["Album"]
-            print("{0}: 제목: {1}, 아티스트: {2}, 앨범: {3}".format(index, curr_title, curr_artist, curr_album))
-        selected_index = int(input(""))
+        selected_index = 0
+        if (len(song_list) > 1) and (not is_first_auto):
+            for index, curr_song in enumerate(song_list):
+                curr_title = curr_song["Title"]
+                curr_artist = curr_song["Artist"]
+                curr_album = curr_song["Album"]
+                print("{0}: 제목: {1}, 아티스트: {2}, 앨범: {3}".format(index, curr_title, curr_artist, curr_album))
+            selected_index = int(input(""))
 
         curAudioFile.initTag()
         selected_song = song_list[selected_index]

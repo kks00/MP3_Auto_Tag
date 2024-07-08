@@ -3,6 +3,10 @@ from urllib import parse
 
 from utils import GetWebData, GetWebContent, parseStr, GetDataList
 
+GenieID = 'your genie id'
+GeniePW = 'your genie pw'
+is_first_auto = False
+
 def get_song_list(keyword, top_n, cookies=None):
     song_id_list = GetDataList(GetWebData("https://www.genie.co.kr/search/searchSong?query=" + parse.quote(keyword) + "&page=1&pagesize=100"), '<tr class="list" songid="', '">')
     if len(song_id_list) < 1:
@@ -14,6 +18,8 @@ def get_song_list(keyword, top_n, cookies=None):
 
         curr_song_info = GetWebData("https://www.genie.co.kr/detail/songInfo?xgnm=" + curr_song_id, cookies=cookies)
         curr_song_title = parseStr(curr_song_info, '<meta property="og:title" content="', ' - genie"/>')
+        if curr_song_title.find(" / ") != -1:
+            curr_song_title = curr_song_title.split(" / ")[0]
 
         curr_song_artist = parseStr(curr_song_info, "fnGoMore('artistInfo'", '</span>')
         curr_song_artist = parseStr(curr_song_artist, '">', '</a>')
