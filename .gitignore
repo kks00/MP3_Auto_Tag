@@ -3,3 +3,4 @@ __pycache__/
 AlbumArt/
 mp3/*
 *.zip
+.vs/
