@@ -8,7 +8,8 @@ GeniePW = 'your genie pw'
 is_first_auto = False
 
 def get_song_list(keyword, top_n, cookies=None):
-    song_id_list = GetDataList(GetWebData("https://www.genie.co.kr/search/searchSong?query=" + parse.quote(keyword) + "&page=1&pagesize=100"), '<tr class="list" songid="', '">')
+    keyword = parse.quote(parse.quote(keyword))
+    song_id_list = GetDataList(GetWebData("https://www.genie.co.kr/search/searchSong?query=" + keyword + "&page=1&pagesize=100"), '<tr class="list" songid="', '">')
     if len(song_id_list) < 1:
         return {}
 
